@@ -1,9 +1,9 @@
 import os
-from config import cfg
+from transreid.config import cfg
 import argparse
-from datasets import make_dataloader
-from model import make_model
-from processor import do_inference
+from transreid.datasets import make_dataloader
+from transreid.model import make_model
+from transreid.processor import do_inference
 from utils.logger import setup_logger
 
 

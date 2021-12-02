@@ -7,11 +7,11 @@ The *official* repository for  [TransReID: Transformer-based Object Re-Identific
 
 ## Pipeline
 
-![framework](figs/framework.png)
+![framework](transreid/figs/framework.png)
 
 ## Abaltion Study of Transformer-based Strong Baseline
 
-![framework](figs/ablation.png)
+![framework](transreid/figs/ablation.png)
 
 
 
@@ -128,7 +128,7 @@ python test.py --config_file configs/VehicleID/vit_transreid_stride.yml MODEL.DE
 
 ## Trained Models and logs (Size 256)
 
-![framework](figs/sota.png)
+![framework](transreid/figs/sota.png)
 
 <table>
 <thead>
