@@ -41,7 +41,7 @@ setup(
 
     # Note that this is a string of words separated by whitespace, not a list.
     keywords='pytorch pretrained transreid person reid',
-    packages=find_packages(exclude=['data']),
+    packages=find_packages(exclude=['data'], include=['model']),
     install_requires=['torch', 'torchvision', 'timm', 'yacs', 'opencv-python'],
     python_requires='>=3.6',
 )
