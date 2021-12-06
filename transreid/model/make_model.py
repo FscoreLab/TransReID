@@ -307,8 +307,8 @@ class build_transformer_local(nn.Module):
 
     def forward(self, x, label=None):  # label is unused if self.cos_layer == 'no'
 
-        cam_label = torch.zeros(size=(x.shape[0],), device=x.device)
-        view_label = torch.zeros(size=(x.shape[0],), device=x.device)
+        cam_label = torch.zeros(size=(x.shape[0],), device=x.device, dtype=torch.long)
+        view_label = torch.zeros(size=(x.shape[0],), device=x.device, dtype=torch.long)
         features = self.base(x, cam_label=cam_label, view_label=view_label)
 
         # global branch
