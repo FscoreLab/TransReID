@@ -305,8 +305,10 @@ class build_transformer_local(nn.Module):
         print('using divide_length size:{}'.format(self.divide_length))
         self.rearrange = rearrange
 
-    def forward(self, x, label=None, cam_label= None, view_label=None):  # label is unused if self.cos_layer == 'no'
+    def forward(self, x, label=None):  # label is unused if self.cos_layer == 'no'
 
+        cam_label = torch.zeros(size=(x.shape[0],), device=x.device)
+        view_label = torch.zeros(size=(x.shape[0],), device=x.device)
         features = self.base(x, cam_label=cam_label, view_label=view_label)
 
         # global branch
