@@ -311,7 +311,7 @@ class build_transformer_local(nn.Module):
         print('using divide_length size:{}'.format(self.divide_length))
         self.rearrange = rearrange
 
-    def forward(self, x) -> Union[torch.Tensor, Tuple[List[torch.Tensor], List[torch.Tensor]]]:   # label is unused if self.cos_layer == 'no'
+    def forward(self, x) -> torch.Tensor:   # label is unused if self.cos_layer == 'no'
 
         cam_label = torch.zeros(size=(x.shape[0],), device=x.device, dtype=torch.long)
         view_label = torch.zeros(size=(x.shape[0],), device=x.device, dtype=torch.long)
@@ -358,18 +358,7 @@ class build_transformer_local(nn.Module):
         local_feat_4_bn = self.bottleneck_4(local_feat_4)
 
         if self.training:
-            # if self.ID_LOSS_TYPE in ('arcface', 'cosface', 'amsoftmax', 'circle'):
-            #     cls_score = self.classifier(feat, label)
-            # else:
-            cls_score = self.classifier(feat)
-            cls_score_1 = self.classifier_1(local_feat_1_bn)
-            cls_score_2 = self.classifier_2(local_feat_2_bn)
-            cls_score_3 = self.classifier_3(local_feat_3_bn)
-            cls_score_4 = self.classifier_4(local_feat_4_bn)
-            return [cls_score, cls_score_1, cls_score_2, cls_score_3,
-                        cls_score_4
-                        ], [global_feat, local_feat_1, local_feat_2, local_feat_3,
-                            local_feat_4]  # global feature for triplet loss
+            raise ValueError("training is not allowed in this branch")
         else:
             if self.neck_feat == 'after':
                 return torch.cat(
