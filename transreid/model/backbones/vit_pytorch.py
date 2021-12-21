@@ -23,6 +23,7 @@ Hacked together by / Copyright 2020 Ross Wightman
 import math
 from functools import partial
 from itertools import repeat
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -116,9 +117,12 @@ default_cfgs = {
     'vit_base_resnet50d_224': _cfg(),
 }
 
+class GELU(nn.Module):
+    def forward(self, x):
+        return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
 
 class Mlp(nn.Module):
-    def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
+    def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=GELU, drop=0.):
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
@@ -163,11 +167,10 @@ class Attention(nn.Module):
         x = self.proj_drop(x)
         return x
 
-
 class Block(nn.Module):
 
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
-                 drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm):
+                 drop_path=0., act_layer=GELU, norm_layer=nn.LayerNorm):
         super().__init__()
         self.norm1 = norm_layer(dim)
         self.attn = Attention(
@@ -337,7 +340,7 @@ class TransReID(nn.Module):
         self.pos_drop = nn.Dropout(p=drop_rate)
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
 
-        self.blocks = nn.ModuleList([
+        self.blocks = nn.Sequential(*[
             Block(
                 dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
                 drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[i], norm_layer=norm_layer)
@@ -372,7 +375,7 @@ class TransReID(nn.Module):
         self.num_classes = num_classes
         self.fc = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
 
-    def forward_features(self, x, camera_id, view_id):
+    def forward_features(self, x: torch.Tensor, camera_id: torch.Tensor, view_id: torch.Tensor):
         B = x.shape[0]
         x = self.patch_embed(x)
 
@@ -392,18 +395,20 @@ class TransReID(nn.Module):
 
         if self.local_feature:
             for blk in self.blocks[:-1]:
-                x = blk(x)
+                x = blk.forward(x)
             return x
 
         else:
             for blk in self.blocks:
-                x = blk(x)
+                x = blk.forward(x)
 
             x = self.norm(x)
 
             return x[:, 0]
 
-    def forward(self, x, cam_label=None, view_label=None):
+    def forward(self, x: torch.Tensor,
+                cam_label: torch.Tensor,
+                view_label: torch.Tensor):
         x = self.forward_features(x, cam_label, view_label)
         return x
 

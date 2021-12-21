@@ -1,11 +1,15 @@
+from typing import Union, List, Tuple
+
 import torch
 import torch.nn as nn
+from typing_extensions import Final
+
 from .backbones.resnet import ResNet, Bottleneck
 import copy
 from .backbones.vit_pytorch import vit_base_patch16_224_TransReID, vit_small_patch16_224_TransReID, deit_small_patch16_224_TransReID
 from transreid.loss.metric_learning import Arcface, Cosface, AMSoftmax, CircleLoss
 
-def shuffle_unit(features, shift, group, begin=1):
+def shuffle_unit(features, shift: int , group: int, begin:int = 1):
 
     batchsize = features.size(0)
     dim = features.size(-1)
@@ -13,9 +17,11 @@ def shuffle_unit(features, shift, group, begin=1):
     feature_random = torch.cat([features[:, begin-1+shift:], features[:, begin:begin-1+shift]], dim=1)
     x = feature_random
     # Patch Shuffle Operation
-    try:
+    # try:
+    if x.numel() % (batchsize * group * dim) == 0:
         x = x.view(batchsize, group, -1, dim)
-    except:
+    # except:
+    else:
         x = torch.cat([x, x[:, -2:-1, :]], dim=1)
         x = x.view(batchsize, group, -1, dim)
 
@@ -252,7 +258,7 @@ class build_transformer_local(nn.Module):
         )
 
         self.num_classes = num_classes
-        self.ID_LOSS_TYPE = cfg.MODEL.ID_LOSS_TYPE
+        self.ID_LOSS_TYPE: Final[str] = cfg.MODEL.ID_LOSS_TYPE
         if self.ID_LOSS_TYPE == 'arcface':
             print('using {} with s:{}, m: {}'.format(self.ID_LOSS_TYPE,cfg.SOLVER.COSINE_SCALE,cfg.SOLVER.COSINE_MARGIN))
             self.classifier = Arcface(self.in_planes, self.num_classes,
@@ -305,7 +311,7 @@ class build_transformer_local(nn.Module):
         print('using divide_length size:{}'.format(self.divide_length))
         self.rearrange = rearrange
 
-    def forward(self, x, label=None):  # label is unused if self.cos_layer == 'no'
+    def forward(self, x) -> Union[torch.Tensor, Tuple[List[torch.Tensor], List[torch.Tensor]]]:   # label is unused if self.cos_layer == 'no'
 
         cam_label = torch.zeros(size=(x.shape[0],), device=x.device, dtype=torch.long)
         view_label = torch.zeros(size=(x.shape[0],), device=x.device, dtype=torch.long)
@@ -352,14 +358,14 @@ class build_transformer_local(nn.Module):
         local_feat_4_bn = self.bottleneck_4(local_feat_4)
 
         if self.training:
-            if self.ID_LOSS_TYPE in ('arcface', 'cosface', 'amsoftmax', 'circle'):
-                cls_score = self.classifier(feat, label)
-            else:
-                cls_score = self.classifier(feat)
-                cls_score_1 = self.classifier_1(local_feat_1_bn)
-                cls_score_2 = self.classifier_2(local_feat_2_bn)
-                cls_score_3 = self.classifier_3(local_feat_3_bn)
-                cls_score_4 = self.classifier_4(local_feat_4_bn)
+            # if self.ID_LOSS_TYPE in ('arcface', 'cosface', 'amsoftmax', 'circle'):
+            #     cls_score = self.classifier(feat, label)
+            # else:
+            cls_score = self.classifier(feat)
+            cls_score_1 = self.classifier_1(local_feat_1_bn)
+            cls_score_2 = self.classifier_2(local_feat_2_bn)
+            cls_score_3 = self.classifier_3(local_feat_3_bn)
+            cls_score_4 = self.classifier_4(local_feat_4_bn)
             return [cls_score, cls_score_1, cls_score_2, cls_score_3,
                         cls_score_4
                         ], [global_feat, local_feat_1, local_feat_2, local_feat_3,
